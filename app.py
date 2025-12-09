@@ -3,24 +3,28 @@ from PIL import Image
 import requests
 from io import BytesIO
 import os
-from dotenv import load_dotenv
+import random
 
-# Load API keys
-load_dotenv()
-TMDB_API_KEY = os.getenv("TMDB_API_KEY")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-SPOTIFY_CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")
-SPOTIFY_CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET")
+# -------------------------
+# 1️⃣ API Keys từ Streamlit Secrets
+# -------------------------
+TMDB_API_KEY = st.secrets["TMDB_API_KEY"]
+OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
+SPOTIFY_CLIENT_ID = st.secrets["SPOTIFY_CLIENT_ID"]
+SPOTIFY_CLIENT_SECRET = st.secrets["SPOTIFY_CLIENT_SECRET"]
 
-# Optional: Initialize TMDb
+# -------------------------
+# 2️⃣ Initialize TMDb
+# -------------------------
 from tmdbv3api import TMDb, Movie
 tmdb = TMDb()
 tmdb.api_key = TMDB_API_KEY
 tmdb.language = 'en'
+movie_api = Movie()
 
-movie = Movie()
-
-# Optional: Initialize Spotify
+# -------------------------
+# 3️⃣ Initialize Spotify
+# -------------------------
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 
@@ -30,75 +34,21 @@ spotify_auth = SpotifyClientCredentials(
 )
 spotify = spotipy.Spotify(auth_manager=spotify_auth)
 
-# Streamlit app config
+# -------------------------
+# 4️⃣ Streamlit app config
+# -------------------------
 st.set_page_config(page_title="Movie Moodboard", layout="wide")
 st.title("🎬 Movie Moodboard")
 
-# Input scene description
+# -------------------------
+# 5️⃣ Input scene description & mood
+# -------------------------
 scene_description = st.text_area("Describe your movie scene:", "")
-
-# Select mood
 mood = st.selectbox("Choose a mood:", ["Happy", "Sad", "Suspenseful", "Romantic"])
 
-if scene_description:
-    st.subheader("🎨 Movie Poster / Concept Art")
-    
-    # TMDb: Search for movie poster matching mood or keyword
-    try:
-        results = movie.search(scene_description)
-        if results:
-            poster_url = f"https://image.tmdb.org/t/p/w500{results[0].poster_path}"
-            response = requests.get(poster_url)
-            poster_img = Image.open(BytesIO(response.content))
-            st.image(poster_img, caption=f"Poster: {results[0].title}", use_column_width=True)
-        else:
-            st.info("No movie poster found. Using placeholder.")
-            placeholder_path = "assets/placeholder.jpg"
-            if os.path.exists(placeholder_path):
-                st.image(Image.open(placeholder_path), caption="Placeholder", use_column_width=True)
-    except Exception as e:
-        st.error(f"Error fetching TMDb poster: {e}")
-
-    st.subheader("🖌️ AI Concept Art (OpenAI DALL·E)")
-    try:
-        import openai
-        openai.api_key = OPENAI_API_KEY
-        prompt = f"Concept art for a {mood.lower()} movie scene: {scene_description}"
-        response = openai.Image.create(
-            prompt=prompt,
-            n=1,
-            size="512x512"
-        )
-        image_url = response['data'][0]['url']
-        ai_image = Image.open(BytesIO(requests.get(image_url).content))
-        st.image(ai_image, caption="AI Concept Art", use_column_width=True)
-    except Exception as e:
-        st.info("OpenAI API error or placeholder used.")
-        placeholder_path = "assets/placeholder.jpg"
-        if os.path.exists(placeholder_path):
-            st.image(Image.open(placeholder_path), caption="Placeholder", use_column_width=True)
-
-    st.subheader("🎵 Suggested Music Playlist")
-    try:
-        results = spotify.search(q=mood, type='playlist', limit=1)
-        if results['playlists']['items']:
-            playlist = results['playlists']['items'][0]
-            st.markdown(f"[{playlist['name']}]({playlist['external_urls']['spotify']})")
-        else:
-            st.info("No playlist found for this mood.")
-    except Exception as e:
-        st.info("Spotify API error or placeholder used.")
-        st.write(f"Suggested playlist for {mood} mood: 🎵 Example Playlist Link")
-
-    st.subheader("📝 Scene Summary")
-    st.write(f"Scene: {scene_description}")
-    st.write(f"Mood: {mood}")
-from PIL import Image
-import random
-import os
-import streamlit as st
-
-# Folder containing placeholder images per mood
+# -------------------------
+# 6️⃣ Mood images fallback
+# -------------------------
 mood_images = {
     "Happy": ["assets/happy1.jpg", "assets/happy2.jpg"],
     "Sad": ["assets/sad1.jpg", "assets/sad2.jpg"],
@@ -106,19 +56,77 @@ mood_images = {
     "Suspenseful": ["assets/suspense1.jpg"]
 }
 
-# User selects a mood
-mood = st.selectbox("Choose a mood:", list(mood_images.keys()))
+# -------------------------
+# 7️⃣ Display movie poster from TMDb
+# -------------------------
+if scene_description:
+    st.subheader("🎨 Movie Poster / Concept Art")
+    poster_displayed = False
+    try:
+        results = movie_api.search(scene_description)
+        if results:
+            poster_path = results[0].poster_path
+            if poster_path:
+                poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}"
+                response = requests.get(poster_url)
+                poster_img = Image.open(BytesIO(response.content))
+                st.image(poster_img, caption=f"Poster: {results[0].title}", use_column_width=True)
+                poster_displayed = True
+    except:
+        poster_displayed = False
 
-# Try to display image from API (TMDb/OpenAI)
-# If API fails, fallback to local assets
+    # Fallback if no poster
+    if not poster_displayed:
+        placeholder_path = random.choice(mood_images.get(mood, ["assets/placeholder.jpg"]))
+        st.image(Image.open(placeholder_path), caption=f"{mood} Moodboard (placeholder)", use_column_width=True)
+
+# -------------------------
+# 8️⃣ AI Concept Art using OpenAI DALL·E
+# -------------------------
+st.subheader("🖌️ AI Concept Art (OpenAI DALL·E)")
+ai_image_displayed = False
 try:
-    # Example: image_from_api = ... (from TMDb or OpenAI)
-    # st.image(image_from_api, caption=f"{mood} Moodboard", use_column_width=True)
-    
-    # Temporary simulate API fail for testing fallback
-    raise Exception("Simulate API fail")
+    import openai
+    openai.api_key = OPENAI_API_KEY
+    prompt = f"Concept art for a {mood.lower()} movie scene: {scene_description}"
+    response = openai.Image.create(
+        prompt=prompt,
+        n=1,
+        size="512x512"
+    )
+    image_url = response['data'][0]['url']
+    ai_image = Image.open(BytesIO(requests.get(image_url).content))
+    st.image(ai_image, caption="AI Concept Art", use_column_width=True)
+    ai_image_displayed = True
 except:
-    # Select a random image from assets folder for the selected mood
-    selected_image = random.choice(mood_images[mood])
-    img = Image.open(selected_image)
-    st.image(img, caption=f"{mood} Moodboard (placeholder)", use_column_width=True)
+    ai_image_displayed = False
+
+# Fallback if AI fails
+if not ai_image_displayed:
+    placeholder_path = random.choice(mood_images.get(mood, ["assets/placeholder.jpg"]))
+    st.image(Image.open(placeholder_path), caption=f"{mood} Moodboard (placeholder)", use_column_width=True)
+
+# -------------------------
+# 9️⃣ Suggested Music Playlist
+# -------------------------
+st.subheader("🎵 Suggested Music Playlist")
+playlist_displayed = False
+try:
+    results = spotify.search(q=mood, type='playlist', limit=1)
+    if results['playlists']['items']:
+        playlist = results['playlists']['items'][0]
+        st.markdown(f"[{playlist['name']}]({playlist['external_urls']['spotify']})")
+        playlist_displayed = True
+except:
+    playlist_displayed = False
+
+# Fallback text if no playlist
+if not playlist_displayed:
+    st.info(f"Spotify playlist for {mood} mood not found. You can use a placeholder playlist link.")
+
+# -------------------------
+# 10️⃣ Scene Summary
+# -------------------------
+st.subheader("📝 Scene Summary")
+st.write(f"Scene: {scene_description}")
+st.write(f"Mood: {mood}")
