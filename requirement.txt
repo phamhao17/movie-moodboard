@@ -1,1 +1,7 @@
-
+streamlit           # Streamlit web app
+requests            # HTTP requests
+python-dotenv       # Load .env API keys
+Pillow              # Image processing
+openai              # OpenAI API (DALL·E, GPT)
+spotipy             # Spotify API
+tmdbv3api           # TMDb API
