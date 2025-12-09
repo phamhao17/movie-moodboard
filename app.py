@@ -6,7 +6,7 @@ import os
 import random
 
 # -------------------------
-# 1️⃣ API Keys từ Streamlit Secrets
+# 1️⃣ API Keys from Streamlit Secrets
 # -------------------------
 TMDB_API_KEY = st.secrets["TMDB_API_KEY"]
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
