@@ -5,4 +5,3 @@ Pillow              # Image processing
 openai              # OpenAI API (DALL·E, GPT)
 spotipy             # Spotify API
 tmdbv3api           # TMDb API
-python-dotenv
