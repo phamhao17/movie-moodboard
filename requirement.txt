@@ -1,6 +1,6 @@
-streamlit           # Streamlit web application
-requests            # HTTP requests
-Pillow              # Image processing
-openai              # OpenAI API (DALL·E, GPT)
-spotipy             # Spotify API
-tmdbv3api           # TMDb API
+streamlit
+requests
+Pillow
+openai
+spotipy
+tmdbv3api==1.8.7
