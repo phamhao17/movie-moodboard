@@ -93,3 +93,32 @@ if scene_description:
     st.subheader("📝 Scene Summary")
     st.write(f"Scene: {scene_description}")
     st.write(f"Mood: {mood}")
+from PIL import Image
+import random
+import os
+import streamlit as st
+
+# Folder containing placeholder images per mood
+mood_images = {
+    "Happy": ["assets/happy1.jpg", "assets/happy2.jpg"],
+    "Sad": ["assets/sad1.jpg", "assets/sad2.jpg"],
+    "Romantic": ["assets/romantic1.jpg"],
+    "Suspenseful": ["assets/suspense1.jpg"]
+}
+
+# User selects a mood
+mood = st.selectbox("Choose a mood:", list(mood_images.keys()))
+
+# Try to display image from API (TMDb/OpenAI)
+# If API fails, fallback to local assets
+try:
+    # Example: image_from_api = ... (from TMDb or OpenAI)
+    # st.image(image_from_api, caption=f"{mood} Moodboard", use_column_width=True)
+    
+    # Temporary simulate API fail for testing fallback
+    raise Exception("Simulate API fail")
+except:
+    # Select a random image from assets folder for the selected mood
+    selected_image = random.choice(mood_images[mood])
+    img = Image.open(selected_image)
+    st.image(img, caption=f"{mood} Moodboard (placeholder)", use_column_width=True)
